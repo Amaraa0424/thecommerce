@@ -1,12 +1,8 @@
-import type { Metadata } from "next"
+"use client"
+
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoginForm } from "@/components/auth/login-form"
-
-export const metadata: Metadata = {
-  title: "Sign In",
-  description: "Sign in to your ShopHub account to access your orders, wishlist, and more.",
-}
 
 export default function LoginPage() {
   const handleLoginSuccess = () => {
@@ -23,7 +19,10 @@ export default function LoginPage() {
             <CardDescription>Sign in to your account to continue shopping</CardDescription>
           </CardHeader>
           <CardContent>
-            <LoginForm onSuccess={handleLoginSuccess} />
+            <LoginForm 
+              onSuccess={handleLoginSuccess} 
+              onSwitchToRegister={() => window.location.href = "/auth/register"}
+            />
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               Don't have an account?{" "}

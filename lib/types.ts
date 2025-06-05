@@ -4,15 +4,15 @@ export interface Product {
   subtitle?: string
   description: string
   price: number
-  originalPrice?: number
+  originalPrice?: number | null
   category: string
   images: string[]
-  availability: "in-stock" | "out-of-stock" | "limited"
+  availability: string
   rating: number
   reviewCount: number
   tags: string[]
-  createdAt: string
-  updatedAt: string
+  createdAt: string | Date
+  updatedAt: string | Date
 }
 
 export interface User {
@@ -23,6 +23,15 @@ export interface User {
   status: "active" | "inactive" | "suspended"
   createdAt: string
   avatar?: string
+  emailVerified?: string
+}
+
+export interface AuthUser {
+  id: string
+  name?: string | null
+  email?: string | null
+  image?: string | null
+  role?: string
 }
 
 export interface Order {

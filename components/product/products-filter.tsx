@@ -1,20 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
 import { Star, X } from "lucide-react"
-import { categories } from "@/lib/data"
+import { useProducts } from "@/contexts/products-context"
 
 export function ProductsFilter() {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState([0, 1000])
-  const [selectedAvailability, setSelectedAvailability] = useState<string[]>([])
-  const [minRating, setMinRating] = useState(0)
+  const { filters, setFilters, clearFilters } = useProducts()
+  const [categories, setCategories] = useState<string[]>([])
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories')
+        const data = await response.json()
+        if (data.success) {
+          const categoryNames = data.data
+            .filter((cat: any) => cat.id !== 'all')
+            .map((cat: any) => cat.name)
+          setCategories(categoryNames)
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+        // Fallback to hardcoded categories
+        setCategories(["Electronics", "Clothing", "Home & Garden", "Sports", "Books", "Beauty"])
+      }
+    }
+    fetchCategories()
+  }, [])
 
   const availabilityOptions = [
     { value: "in-stock", label: "In Stock" },
@@ -23,34 +41,45 @@ export function ProductsFilter() {
   ]
 
   const handleCategoryChange = (category: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCategories([...selectedCategories, category])
-    } else {
-      setSelectedCategories(selectedCategories.filter((c) => c !== category))
-    }
+    const newCategory = checked ? category : "All"
+    setFilters({
+      ...filters,
+      category: newCategory
+    })
   }
 
   const handleAvailabilityChange = (availability: string, checked: boolean) => {
-    if (checked) {
-      setSelectedAvailability([...selectedAvailability, availability])
-    } else {
-      setSelectedAvailability(selectedAvailability.filter((a) => a !== availability))
-    }
+    const newAvailability = checked
+      ? [...filters.availability, availability]
+      : filters.availability.filter((a) => a !== availability)
+    
+    setFilters({
+      ...filters,
+      availability: newAvailability
+    })
   }
 
-  const clearAllFilters = () => {
-    setSelectedCategories([])
-    setPriceRange([0, 1000])
-    setSelectedAvailability([])
-    setMinRating(0)
+  const handlePriceRangeChange = (newRange: number[]) => {
+    setFilters({
+      ...filters,
+      priceRange: [newRange[0], newRange[1]]
+    })
+  }
+
+  const handleRatingChange = (rating: number, checked: boolean) => {
+    setFilters({
+      ...filters,
+      rating: checked ? rating : 0
+    })
   }
 
   const hasActiveFilters =
-    selectedCategories.length > 0 ||
-    priceRange[0] > 0 ||
-    priceRange[1] < 1000 ||
-    selectedAvailability.length > 0 ||
-    minRating > 0
+    filters.category !== "All" ||
+    filters.priceRange[0] > 0 ||
+    filters.priceRange[1] < 1000 ||
+    filters.availability.length > 0 ||
+    filters.rating > 0 ||
+    filters.search
 
   return (
     <Card className="sticky top-4">
@@ -61,7 +90,7 @@ export function ProductsFilter() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={clearAllFilters}
+              onClick={clearFilters}
               className="text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4 mr-1" />
@@ -75,23 +104,21 @@ export function ProductsFilter() {
         <div>
           <h3 className="font-medium mb-3">Categories</h3>
           <div className="space-y-2">
-            {categories
-              .filter((cat) => cat !== "All")
-              .map((category) => (
-                <div key={category} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={category}
-                    checked={selectedCategories.includes(category)}
-                    onCheckedChange={(checked) => handleCategoryChange(category, checked as boolean)}
-                  />
-                  <label
-                    htmlFor={category}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    {category}
-                  </label>
-                </div>
-              ))}
+            {categories.map((category) => (
+              <div key={category} className="flex items-center space-x-2">
+                <Checkbox
+                  id={category}
+                  checked={filters.category === category}
+                  onCheckedChange={(checked) => handleCategoryChange(category, checked as boolean)}
+                />
+                <label
+                  htmlFor={category}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  {category}
+                </label>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -101,10 +128,17 @@ export function ProductsFilter() {
         <div>
           <h3 className="font-medium mb-3">Price Range</h3>
           <div className="space-y-4">
-            <Slider value={priceRange} onValueChange={setPriceRange} max={1000} min={0} step={10} className="w-full" />
+            <Slider 
+              value={filters.priceRange} 
+              onValueChange={handlePriceRangeChange} 
+              max={1000} 
+              min={0} 
+              step={10} 
+              className="w-full" 
+            />
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>${priceRange[0]}</span>
-              <span>${priceRange[1]}</span>
+              <span>${filters.priceRange[0]}</span>
+              <span>${filters.priceRange[1]}</span>
             </div>
           </div>
         </div>
@@ -119,7 +153,7 @@ export function ProductsFilter() {
               <div key={option.value} className="flex items-center space-x-2">
                 <Checkbox
                   id={option.value}
-                  checked={selectedAvailability.includes(option.value)}
+                  checked={filters.availability.includes(option.value)}
                   onCheckedChange={(checked) => handleAvailabilityChange(option.value, checked as boolean)}
                 />
                 <label
@@ -143,8 +177,8 @@ export function ProductsFilter() {
               <div key={rating} className="flex items-center space-x-2">
                 <Checkbox
                   id={`rating-${rating}`}
-                  checked={minRating === rating}
-                  onCheckedChange={(checked) => setMinRating(checked ? rating : 0)}
+                  checked={filters.rating === rating}
+                  onCheckedChange={(checked) => handleRatingChange(rating, checked as boolean)}
                 />
                 <label
                   htmlFor={`rating-${rating}`}
@@ -166,65 +200,6 @@ export function ProductsFilter() {
             ))}
           </div>
         </div>
-
-        {/* Active Filters */}
-        {hasActiveFilters && (
-          <>
-            <Separator />
-            <div>
-              <h3 className="font-medium mb-3">Active Filters</h3>
-              <div className="flex flex-wrap gap-2">
-                {selectedCategories.map((category) => (
-                  <Badge key={category} variant="secondary" className="text-xs">
-                    {category}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 ml-1"
-                      onClick={() => handleCategoryChange(category, false)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                ))}
-                {(priceRange[0] > 0 || priceRange[1] < 1000) && (
-                  <Badge variant="secondary" className="text-xs">
-                    ${priceRange[0]} - ${priceRange[1]}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 ml-1"
-                      onClick={() => setPriceRange([0, 1000])}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                )}
-                {selectedAvailability.map((availability) => (
-                  <Badge key={availability} variant="secondary" className="text-xs">
-                    {availabilityOptions.find((opt) => opt.value === availability)?.label}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 ml-1"
-                      onClick={() => handleAvailabilityChange(availability, false)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                ))}
-                {minRating > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {minRating}+ stars
-                    <Button variant="ghost" size="sm" className="h-auto p-0 ml-1" onClick={() => setMinRating(0)}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </>
-        )}
       </CardContent>
     </Card>
   )

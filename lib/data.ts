@@ -1,5 +1,6 @@
 import type { Product, User, Order, Review } from "./types"
 
+
 export const products: Product[] = [
   {
     id: "1",
@@ -45,7 +46,7 @@ export const products: Product[] = [
     description:
       "Comfortable and eco-friendly t-shirt made from 100% organic cotton. Perfect for everyday wear with a relaxed fit.",
     price: 29.99,
-    category: "Fashion",
+    category: "Clothing",
     images: ["/placeholder.svg?height=400&width=400"],
     availability: "in-stock",
     rating: 4.4,
@@ -93,7 +94,7 @@ export const products: Product[] = [
     description:
       "Premium handcrafted wallet made from genuine Italian leather. Features multiple card slots and a sleek design.",
     price: 149.99,
-    category: "Fashion",
+    category: "Clothing",
     images: ["/placeholder.svg?height=400&width=400", "/placeholder.svg?height=400&width=400"],
     availability: "in-stock",
     rating: 4.7,
@@ -217,9 +218,9 @@ export const reviews: Review[] = [
 export const categories = [
   "All",
   "Electronics",
-  "Fashion",
+  "Clothing",
   "Home & Garden",
-  "Sports & Outdoors",
+  "Sports",
   "Books",
-  "Beauty & Personal Care",
+  "Beauty",
 ]

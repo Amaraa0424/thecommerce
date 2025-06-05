@@ -22,7 +22,7 @@ export default function HomePage() {
       <HeroSection />
       <FeaturesSection />
       <ProductsSection />
-      <TestimonialsSection />
+      {/* <TestimonialsSection /> */}
       <NewsletterSection />
     </div>
   )

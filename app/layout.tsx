@@ -5,7 +5,9 @@ import "./globals.css"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Toaster } from "@/components/ui/toaster"
-import { ThemeProvider } from "@/components/theme-provider"
+import { Providers } from "@/components/providers"
+import { ProductsProvider } from "@/contexts/products-context"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -37,7 +39,7 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-    generator: 'v0.dev'
+    generator: 'Amaraa'
 }
 
 export default function RootLayout({
@@ -48,14 +50,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-          <Toaster />
-        </ThemeProvider>
+        <ErrorBoundary>
+          <Providers>
+            <ProductsProvider>
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            </ProductsProvider>
+            <Toaster />
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   )

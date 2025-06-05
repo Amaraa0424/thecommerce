@@ -1,12 +1,8 @@
-import type { Metadata } from "next"
+"use client"
+
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { RegisterForm } from "@/components/auth/register-form"
-
-export const metadata: Metadata = {
-  title: "Create Account",
-  description: "Create a new ShopHub account to start shopping and access exclusive features.",
-}
 
 export default function RegisterPage() {
   const handleRegisterSuccess = () => {
@@ -23,7 +19,10 @@ export default function RegisterPage() {
             <CardDescription>Join ShopHub and start your shopping journey</CardDescription>
           </CardHeader>
           <CardContent>
-            <RegisterForm onSuccess={handleRegisterSuccess} />
+            <RegisterForm 
+              onSuccess={handleRegisterSuccess} 
+              onSwitchToLogin={() => window.location.href = "/auth/login"}
+            />
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               Already have an account?{" "}

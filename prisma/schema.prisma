@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" 
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id           String     @id @default(cuid())
+  title        String
+  subtitle     String
+  description  String
+  price        Float
+  originalPrice Float?    // optional
+  category     String
+  images       String[]   // URL strings
+  availability String     // enum could be better (e.g., IN_STOCK, LIMITED)
+  rating       Float
+  reviewCount  Int
+  tags         String[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  reviews      Review[]
+  orderItems   OrderItem[]
+  cartItems    CartItem[]
+  favorites    Favorite[]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // For credentials auth
+  role          Role      @default(CUSTOMER)
+  status        Status    @default(ACTIVE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  reviews       Review[]
+  orders        Order[]
+  otpCodes      OtpCode[]
+  cartItems     CartItem[]
+  favorites     Favorite[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  type      OtpType
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  total           Float
+  status          OrderStatus
+  createdAt       DateTime    @default(now())
+
+  customer        User        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId      String
+  customerName    String
+  customerEmail   String
+
+  shippingAddress ShippingAddress @relation(fields: [shippingAddressId], references: [id], onDelete: Cascade)
+  shippingAddressId String @unique
+
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productTitle String
+  quantity    Int
+  price       Float
+  image       String
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId     String
+}
+
+model ShippingAddress {
+  id        String   @id @default(cuid())
+  street    String
+  city      String
+  state     String
+  zipCode   String
+  country   String
+  order     Order?
+  orderId   String   @unique
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  LOGIN_VERIFICATION
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  slug        String   @unique
+  image       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}

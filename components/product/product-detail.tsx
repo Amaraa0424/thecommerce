@@ -1,39 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/hooks/use-toast"
-import type { Product } from "@/lib/types"
-import { Heart, ShoppingCart, Star, Truck, Shield, RotateCcw, Plus, Minus, Share2 } from "lucide-react"
+import { useState } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import type { Product } from "@/lib/types";
+import {
+  Heart,
+  ShoppingCart,
+  Star,
+  Truck,
+  Shield,
+  RotateCcw,
+  Plus,
+  Minus,
+  Share2,
+} from "lucide-react";
+import { useCart } from "@/contexts/cart-context";
+import { useFavorites } from "@/contexts/favorites-context";
 
 interface ProductDetailProps {
-  product: Product
+  product: Product;
 }
 
 export function ProductDetail({ product }: ProductDetailProps) {
-  const [selectedImage, setSelectedImage] = useState(0)
-  const [quantity, setQuantity] = useState(1)
-  const [isWishlisted, setIsWishlisted] = useState(false)
-  const { toast } = useToast()
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const { addItem } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const { toast } = useToast();
+  const isWishlisted = isFavorite(product.id);
 
   const handleAddToCart = () => {
-    toast({
-      title: "Added to cart",
-      description: `${quantity} x ${product.title} added to your cart.`,
-    })
-  }
+    addItem(product, quantity);
+  };
 
   const handleToggleWishlist = () => {
-    setIsWishlisted(!isWishlisted)
-    toast({
-      title: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
-      description: `${product.title} has been ${isWishlisted ? "removed from" : "added to"} your wishlist.`,
-    })
-  }
+    toggleFavorite(product);
+  };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -41,19 +48,21 @@ export function ProductDetail({ product }: ProductDetailProps) {
         title: product.title,
         text: product.description,
         url: window.location.href,
-      })
+      });
     } else {
-      navigator.clipboard.writeText(window.location.href)
+      navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Link copied",
         description: "Product link has been copied to clipboard.",
-      })
+      });
     }
-  }
+  };
 
   const discountPercentage = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0
+    ? Math.round(
+        ((product.originalPrice - product.price) / product.originalPrice) * 100
+      )
+    : 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -79,7 +88,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 key={index}
                 onClick={() => setSelectedImage(index)}
                 className={`aspect-square overflow-hidden rounded-lg border-2 transition-colors ${
-                  selectedImage === index ? "border-primary" : "border-muted hover:border-muted-foreground"
+                  selectedImage === index
+                    ? "border-primary"
+                    : "border-muted hover:border-muted-foreground"
                 }`}
               >
                 <Image
@@ -103,7 +114,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
             {product.category}
           </Badge>
           <h1 className="text-3xl font-bold">{product.title}</h1>
-          {product.subtitle && <p className="text-xl text-muted-foreground mt-2">{product.subtitle}</p>}
+          {product.subtitle && (
+            <p className="text-xl text-muted-foreground mt-2">
+              {product.subtitle}
+            </p>
+          )}
         </div>
 
         {/* Rating */}
@@ -114,13 +129,17 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 <Star
                   key={i}
                   className={`h-4 w-4 ${
-                    i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                    i < Math.floor(product.rating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground"
                   }`}
                 />
               ))}
             </div>
             <span className="font-medium">{product.rating}</span>
-            <span className="text-muted-foreground">({product.reviewCount} reviews)</span>
+            <span className="text-muted-foreground">
+              ({product.reviewCount} reviews)
+            </span>
           </div>
         </div>
 
@@ -129,7 +148,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <span className="text-3xl font-bold">${product.price}</span>
           {product.originalPrice && (
             <>
-              <span className="text-xl text-muted-foreground line-through">${product.originalPrice}</span>
+              <span className="text-xl text-muted-foreground line-through">
+                ${product.originalPrice}
+              </span>
               <Badge variant="destructive">Save {discountPercentage}%</Badge>
             </>
           )}
@@ -142,23 +163,25 @@ export function ProductDetail({ product }: ProductDetailProps) {
               product.availability === "in-stock"
                 ? "bg-green-500"
                 : product.availability === "limited"
-                  ? "bg-yellow-500"
-                  : "bg-red-500"
+                ? "bg-yellow-500"
+                : "bg-red-500"
             }`}
           />
           <span className="font-medium">
             {product.availability === "in-stock"
               ? "In Stock"
               : product.availability === "limited"
-                ? "Limited Stock"
-                : "Out of Stock"}
+              ? "Limited Stock"
+              : "Out of Stock"}
           </span>
         </div>
 
         {/* Description */}
         <div>
           <h3 className="font-semibold mb-2">Description</h3>
-          <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+          <p className="text-muted-foreground leading-relaxed">
+            {product.description}
+          </p>
         </div>
 
         {/* Tags */}
@@ -191,7 +214,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              <span className="px-4 py-2 min-w-[3rem] text-center">{quantity}</span>
+              <span className="px-4 py-2 min-w-[3rem] text-center">
+                {quantity}
+              </span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -212,10 +237,16 @@ export function ProductDetail({ product }: ProductDetailProps) {
               disabled={product.availability === "out-of-stock"}
             >
               <ShoppingCart className="h-5 w-5 mr-2" />
-              {product.availability === "out-of-stock" ? "Out of Stock" : "Add to Cart"}
+              {product.availability === "out-of-stock"
+                ? "Out of Stock"
+                : "Add to Cart"}
             </Button>
             <Button size="lg" variant="outline" onClick={handleToggleWishlist}>
-              <Heart className={`h-5 w-5 ${isWishlisted ? "fill-current text-red-500" : ""}`} />
+              <Heart
+                className={`h-5 w-5 ${
+                  isWishlisted ? "fill-current text-red-500" : ""
+                }`}
+              />
             </Button>
             <Button size="lg" variant="outline" onClick={handleShare}>
               <Share2 className="h-5 w-5" />
@@ -231,21 +262,27 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 <Truck className="h-5 w-5 text-primary" />
                 <div>
                   <div className="font-medium">Free Shipping</div>
-                  <div className="text-sm text-muted-foreground">On orders over $50</div>
+                  <div className="text-sm text-muted-foreground">
+                    On orders over $50
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <Shield className="h-5 w-5 text-primary" />
                 <div>
                   <div className="font-medium">Warranty</div>
-                  <div className="text-sm text-muted-foreground">1 year guarantee</div>
+                  <div className="text-sm text-muted-foreground">
+                    1 year guarantee
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <RotateCcw className="h-5 w-5 text-primary" />
                 <div>
                   <div className="font-medium">Easy Returns</div>
-                  <div className="text-sm text-muted-foreground">30-day policy</div>
+                  <div className="text-sm text-muted-foreground">
+                    30-day policy
+                  </div>
                 </div>
               </div>
             </div>
@@ -253,5 +290,5 @@ export function ProductDetail({ product }: ProductDetailProps) {
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -11,30 +11,26 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import type { Product } from "@/lib/types"
 import { Heart, ShoppingCart, Star, Eye } from "lucide-react"
+import { useCart } from "@/contexts/cart-context"
+import { useFavorites } from "@/contexts/favorites-context"
 
-interface ProductCardProps {
+export interface ProductCardProps {
   product: Product
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false)
-  const { toast } = useToast()
+  const { addItem } = useCart()
+  const { toggleFavorite, isFavorite } = useFavorites()
+  const isWishlisted = isFavorite(product.id)
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
-    toast({
-      title: "Added to cart",
-      description: `${product.title} has been added to your cart.`,
-    })
+    addItem(product, 1)
   }
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault()
-    setIsWishlisted(!isWishlisted)
-    toast({
-      title: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
-      description: `${product.title} has been ${isWishlisted ? "removed from" : "added to"} your wishlist.`,
-    })
+    toggleFavorite(product)
   }
 
   const discountPercentage = product.originalPrice
@@ -99,7 +95,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Title */}
           <Link href={`/products/${product.id}`}>
-            <h3 className="font-semibold text-sm line-clamp-2 hover:text-primary transition-colors">{product.title}</h3>
+            <h3 className="font-semibold text-sm line-clamp-2 hover:text-primary transition-colors truncate">{product.title}</h3>
           </Link>
 
           {/* Rating */}

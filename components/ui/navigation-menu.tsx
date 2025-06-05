@@ -1,9 +1,13 @@
 import * as React from "react"
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
 import { cva } from "class-variance-authority"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Search, X } from "lucide-react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 const NavigationMenu = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Root>,
@@ -115,6 +119,67 @@ const NavigationMenuIndicator = React.forwardRef<
 NavigationMenuIndicator.displayName =
   NavigationMenuPrimitive.Indicator.displayName
 
+const NavigationMenuSearch = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & {
+    placeholder?: string
+    className?: string
+  }
+>(({ className, placeholder = "Search products...", ...props }, ref) => {
+  const [searchInput, setSearchInput] = useState("")
+  const router = useRouter()
+
+  const handleSearch = () => {
+    const query = searchInput.trim()
+    if (query) {
+      // Navigate to products page with search query
+      router.push(`/products?search=${encodeURIComponent(query)}`)
+    }
+  }
+
+  const handleClearSearch = () => {
+    setSearchInput("")
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch()
+    }
+  }
+
+  return (
+    <div 
+      ref={ref}
+      className={cn("flex items-center space-x-2 w-full max-w-md", className)}
+      {...props}
+    >
+      <div className="relative flex-1">
+        <Input
+          placeholder={placeholder}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          className="pr-10"
+        />
+        {searchInput && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+            onClick={handleClearSearch}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+      <Button onClick={handleSearch} size="sm">
+        <Search className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+})
+NavigationMenuSearch.displayName = "NavigationMenuSearch"
+
 export {
   navigationMenuTriggerStyle,
   NavigationMenu,
@@ -125,4 +190,5 @@ export {
   NavigationMenuLink,
   NavigationMenuIndicator,
   NavigationMenuViewport,
+  NavigationMenuSearch,
 }
