@@ -1,12 +1,13 @@
 import { prisma } from './client'
 import type { Product } from '@prisma/client'
 import { Prisma } from '@prisma/client'
+import { safePrismaOperation } from './connection-wrapper'
 
 // Product CRUD Operations
 export const productOperations = {
   // CREATE
   async create(data: Omit<Prisma.ProductCreateInput, 'id' | 'createdAt' | 'updatedAt'>) {
-    try {
+    return safePrismaOperation(async () => {
       return await prisma.product.create({
         data,
         include: {
@@ -22,9 +23,7 @@ export const productOperations = {
           }
         }
       })
-    } catch (error) {
-      throw new Error(`Failed to create product: ${error}`)
-    }
+    }, 'create product')
   },
 
   // READ - Get all products with filters
@@ -40,7 +39,7 @@ export const productOperations = {
     page?: number
     limit?: number
   }) {
-    try {
+    return safePrismaOperation(async () => {
       const {
         category,
         search,
@@ -118,14 +117,12 @@ export const productOperations = {
           hasPrev: page > 1
         }
       }
-    } catch (error) {
-      throw new Error(`Failed to fetch products: ${error}`)
-    }
+    }, 'fetch products')
   },
 
   // READ - Get single product by ID
   async getById(id: string) {
-    try {
+    return safePrismaOperation(async () => {
       const product = await prisma.product.findUnique({
         where: { id },
         include: {
@@ -148,14 +145,12 @@ export const productOperations = {
       }
 
       return product
-    } catch (error) {
-      throw new Error(`Failed to fetch product: ${error}`)
-    }
+    }, 'fetch product by ID')
   },
 
   // READ - Get related products
   async getRelated(productId: string, limit: number = 4) {
-    try {
+    return safePrismaOperation(async () => {
       const product = await prisma.product.findUnique({
         where: { id: productId },
         select: { category: true, tags: true }
@@ -185,14 +180,12 @@ export const productOperations = {
         take: limit,
         orderBy: { rating: 'desc' }
       })
-    } catch (error) {
-      throw new Error(`Failed to fetch related products: ${error}`)
-    }
+    }, 'fetch related products')
   },
 
   // READ - Get featured products
   async getFeatured(limit: number = 6) {
-    try {
+    return safePrismaOperation(async () => {
       return await prisma.product.findMany({
         where: {
           rating: { gte: 4.5 },
@@ -209,14 +202,12 @@ export const productOperations = {
         ],
         take: limit
       })
-    } catch (error) {
-      throw new Error(`Failed to fetch featured products: ${error}`)
-    }
+    }, 'fetch featured products')
   },
 
   // UPDATE
   async update(id: string, data: Partial<Omit<Prisma.ProductUpdateInput, 'id' | 'createdAt'>>) {
-    try {
+    return safePrismaOperation(async () => {
       return await prisma.product.update({
         where: { id },
         data: {
@@ -236,45 +227,32 @@ export const productOperations = {
           }
         }
       })
-    } catch (error) {
-      throw new Error(`Failed to update product: ${error}`)
-    }
+    }, 'update product')
   },
 
   // UPDATE - Update stock/availability
   async updateStock(id: string, availability: string) {
-    try {
+    return safePrismaOperation(async () => {
       return await prisma.product.update({
         where: { id },
         data: { availability },
         select: { id: true, title: true, availability: true }
       })
-    } catch (error) {
-      throw new Error(`Failed to update product stock: ${error}`)
-    }
+    }, 'update product stock')
   },
 
   // DELETE - Cascade delete product and all related data
   async delete(id: string) {
-    try {
-      // With cascade deletes in schema, we can simply delete the product
-      // and all related data will be automatically deleted
+    return safePrismaOperation(async () => {
       return await prisma.product.delete({
         where: { id }
       })
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new Error('Product not found')
-        }
-      }
-      throw new Error(`Failed to delete product: ${error}`)
-    }
+    }, 'delete product')
   },
 
   // DELETE - Soft delete (mark as unavailable) product instead of hard delete
   async softDelete(id: string) {
-    try {
+    return safePrismaOperation(async () => {
       return await prisma.product.update({
         where: { id },
         data: { 
@@ -286,32 +264,23 @@ export const productOperations = {
           availability: true
         }
       })
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new Error('Product not found')
-        }
-      }
-      throw new Error(`Failed to soft delete product: ${error}`)
-    }
+    }, 'soft delete product')
   },
 
   // UTILITY - Get categories
   async getCategories() {
-    try {
+    return safePrismaOperation(async () => {
       const categories = await prisma.product.findMany({
         select: { category: true },
         distinct: ['category']
       })
       return ['All', ...categories.map(c => c.category)]
-    } catch (error) {
-      throw new Error(`Failed to fetch categories: ${error}`)
-    }
+    }, 'fetch categories')
   },
 
   // UTILITY - Get price range
   async getPriceRange() {
-    try {
+    return safePrismaOperation(async () => {
       const result = await prisma.product.aggregate({
         _min: { price: true },
         _max: { price: true }
@@ -320,14 +289,12 @@ export const productOperations = {
         min: result._min.price || 0,
         max: result._max.price || 1000
       }
-    } catch (error) {
-      throw new Error(`Failed to fetch price range: ${error}`)
-    }
+    }, 'fetch price range')
   },
 
   // UTILITY - Search suggestions
   async getSearchSuggestions(query: string, limit: number = 5) {
-    try {
+    return safePrismaOperation(async () => {
       return await prisma.product.findMany({
         where: {
           OR: [
@@ -338,8 +305,6 @@ export const productOperations = {
         select: { id: true, title: true, category: true },
         take: limit
       })
-    } catch (error) {
-      throw new Error(`Failed to fetch search suggestions: ${error}`)
-    }
+    }, 'fetch search suggestions')
   }
 }
