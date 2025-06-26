@@ -5,6 +5,9 @@ import { ProductsSection } from "@/components/home/products-section"
 import { TestimonialsSection } from "@/components/home/testimonials-section"
 import { NewsletterSection } from "@/components/home/newsletter-section"
 
+// Force dynamic rendering to prevent build-time database queries
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: "ShopHub - Modern eCommerce Store",
   description:
